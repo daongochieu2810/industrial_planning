@@ -1,8 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import mapboxgl from "mapbox-gl";
+import { ChakraProvider } from "@chakra-ui/react";
 import "./index.css";
-import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import App from "./App";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import reportWebVitals from "./reportWebVitals";
@@ -11,7 +12,9 @@ mapboxgl.accessToken =
   "pk.eyJ1IjoiZGFvbmdvY2hpZXUyODEwIiwiYSI6ImNraW9samJqbzFkeDMyeG5hOHFqYmFqZ3AifQ.dYfEXSlusLAEe4QE6_F38A";
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <ChakraProvider>
+      <App />
+    </ChakraProvider>
   </React.StrictMode>,
   document.getElementById("root")
 );
