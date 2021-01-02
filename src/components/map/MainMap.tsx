@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import mapboxgl, { Layer, Map } from "mapbox-gl";
 import suncalc from "suncalc";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
-import "./map.css";
+import "../../App.css";
 
 function MainMap() {
   const mapContainer = useRef(null);
@@ -175,7 +175,7 @@ function MainMap() {
       });
     }
   }, [mapContainer.current]);
-  return <div ref={mapContainer} className="map" />;
+  return <div ref={mapContainer} className="map flex-1" />;
 }
 
 export default MainMap;
