@@ -10,12 +10,21 @@ import suncalc from "suncalc";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "../../App.css";
 
-function MainMap() {
+export interface MainMapProps {
+  mode: string;
+}
+const MainMap: React.FC<MainMapProps> = ({ mode }) => {
   const mapContainer = useRef(null);
   const [lat, setLat] = useState<number>(34);
   const [lon, setLon] = useState<number>(5);
   const [zoom, setZoom] = useState<number>(15.5);
-  const [map, setMap] = useState<Map>(null);
+
+  useEffect(() => {
+    if (mode) {
+      console.log(mode);
+    }
+  }, [mode]);
+
   function coordinatesGeocoder(query: any) {
     const matches = query.match(
       /^[ ]*(?:Lat: )?(-?\d+\.?\d*)[, ]+(?:Lng: )?(-?\d+\.?\d*)[ ]*$/i
@@ -67,36 +76,6 @@ function MainMap() {
     return [sunAzimuth, sunAltitude];
   }
 
-  useEffect(() => {
-    console.log("map changed");
-    if (map) {
-      map.removeLayer("sky");
-      map.addLayer({
-        id: "sky",
-        type: "sky",
-        paint: {
-          "sky-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0,
-            0,
-            5,
-            0.3,
-            8,
-            1,
-          ],
-          // set up the sky layer for atmospheric scattering
-          "sky-type": "atmosphere",
-          // explicitly set the position of the sun rather than allowing the sun to be attached to the main light source
-          "sky-atmosphere-sun": getSunPosition(map),
-          // set the intensity of the sun as a light source (0-100 with higher values corresponding to brighter skies)
-          "sky-atmosphere-sun-intensity": 5,
-        },
-      } as any);
-    }
-  }, [map]);
-
   function hideExtrude(map: Map, e: MapMouseEvent & MapDataEvent) {
     let bbox: [PointLike, PointLike] = [
       [e.point.x - 5, e.point.y - 5],
@@ -127,14 +106,13 @@ function MainMap() {
         container: mapContainer.current,
         antialias: true,
       });
-      setMap(map);
 
       map.addControl(
         new MapboxGeocoder({
           accessToken: mapboxgl.accessToken,
           localGeocoder: coordinatesGeocoder,
           zoom: zoom,
-          placeholder: "Try: -40, 170",
+          placeholder: "Search",
           mapboxgl: mapboxgl,
         })
       );
@@ -144,7 +122,6 @@ function MainMap() {
       map.on("load", function () {
         // Insert the layer beneath any symbol layer.
         var layers: Layer[] = map.getStyle().layers;
-
         var labelLayerId;
         for (var i = 0; i < layers.length; i++) {
           if (layers[i].type === "symbol" && layers[i].layout["text-field"]) {
@@ -238,6 +215,6 @@ function MainMap() {
     }
   }, [mapContainer.current]);
   return <div ref={mapContainer} className="map flex-1" />;
-}
+};
 
 export default MainMap;

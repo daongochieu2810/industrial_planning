@@ -53,6 +53,9 @@ const SideOptionItem: React.FC<SideOptionItemProps> = ({
                 <div
                   key={item.id}
                   onClick={() => {
+                    if (item instanceof ModeOption) {
+                      item.onClick();
+                    }
                     setSelectedSubOption(item);
                   }}
                 >
