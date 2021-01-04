@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import mapboxgl, { Layer, Map } from "mapbox-gl";
+import mapboxgl, {
+  Layer,
+  Map,
+  MapMouseEvent,
+  MapDataEvent,
+  PointLike,
+} from "mapbox-gl";
 import suncalc from "suncalc";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "../../App.css";
@@ -9,6 +15,7 @@ function MainMap() {
   const [lat, setLat] = useState<number>(34);
   const [lon, setLon] = useState<number>(5);
   const [zoom, setZoom] = useState<number>(15.5);
+  const [map, setMap] = useState<Map>(null);
   function coordinatesGeocoder(query: any) {
     const matches = query.match(
       /^[ ]*(?:Lat: )?(-?\d+\.?\d*)[, ]+(?:Lng: )?(-?\d+\.?\d*)[ ]*$/i
@@ -51,13 +58,64 @@ function MainMap() {
 
     return geocodes;
   }
+
   function getSunPosition(map: Map) {
-    var center = map.getCenter();
-    var sunPos = suncalc.getPosition(new Date(), center.lat, center.lng);
-    var sunAzimuth = 180 + (sunPos.azimuth * 180) / Math.PI;
-    var sunAltitude = 90 - (sunPos.altitude * 180) / Math.PI;
+    let center = map.getCenter();
+    let sunPos = suncalc.getPosition(new Date(), center.lat, center.lng);
+    let sunAzimuth = 180 + (sunPos?.azimuth * 180) / Math.PI;
+    let sunAltitude = 90 - (sunPos?.altitude * 180) / Math.PI;
     return [sunAzimuth, sunAltitude];
   }
+
+  useEffect(() => {
+    console.log("map changed");
+    if (map) {
+      map.removeLayer("sky");
+      map.addLayer({
+        id: "sky",
+        type: "sky",
+        paint: {
+          "sky-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0,
+            0,
+            5,
+            0.3,
+            8,
+            1,
+          ],
+          // set up the sky layer for atmospheric scattering
+          "sky-type": "atmosphere",
+          // explicitly set the position of the sun rather than allowing the sun to be attached to the main light source
+          "sky-atmosphere-sun": getSunPosition(map),
+          // set the intensity of the sun as a light source (0-100 with higher values corresponding to brighter skies)
+          "sky-atmosphere-sun-intensity": 5,
+        },
+      } as any);
+    }
+  }, [map]);
+
+  function hideExtrude(map: Map, e: MapMouseEvent & MapDataEvent) {
+    let bbox: [PointLike, PointLike] = [
+      [e.point.x - 5, e.point.y - 5],
+      [e.point.x + 5, e.point.y + 5],
+    ];
+    let features = map.queryRenderedFeatures(bbox, {
+      layers: ["3d-buildings"],
+    });
+    let filter = features.reduce(
+      function (memo, feature) {
+        memo.push(["!=", ["id"], feature.id]);
+        return memo;
+      },
+      ["all", ["!=", ["id"], -1]]
+    );
+    //var filter = ["all", ["!=", ["id"], -1], ["!=", ["id"], features[0].id]];
+    map.setFilter("3d-buildings", filter);
+  }
+
   useEffect(() => {
     if (mapContainer.current) {
       const map: mapboxgl.Map = new mapboxgl.Map({
@@ -69,6 +127,7 @@ function MainMap() {
         container: mapContainer.current,
         antialias: true,
       });
+      setMap(map);
 
       map.addControl(
         new MapboxGeocoder({
@@ -79,6 +138,9 @@ function MainMap() {
           mapboxgl: mapboxgl,
         })
       );
+      map.on("click", function (e: MapMouseEvent & MapDataEvent) {
+        hideExtrude(map, e);
+      });
       map.on("load", function () {
         // Insert the layer beneath any symbol layer.
         var layers: Layer[] = map.getStyle().layers;

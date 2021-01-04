@@ -1,10 +1,17 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Divider } from "@chakra-ui/react";
 import SideOptionItem from "./SideOptionItem";
+import Option from "./Option";
+import ModeOption from "./ModeOption";
 
-export interface SideOptionContainerProps {}
+export interface SideOptionContainerProps {
+  options: Option[];
+}
 
-const SideOptionContainer: React.FC = () => {
+const SideOptionContainer: React.FC<SideOptionContainerProps> = ({
+  options,
+}) => {
+  const [selectedSubOption, setSelectedSubOption] = useState<Option>(null);
   return (
     <Container h="100vh" w="25vw" className="bg-white">
       <h1 className="px-2 py-5 text-xl font-bold font-mono">
@@ -13,8 +20,13 @@ const SideOptionContainer: React.FC = () => {
         </a>
       </h1>
       <Divider />
-      <SideOptionItem />
-      <SideOptionItem />
+      {options.map((option) => (
+        <SideOptionItem
+          option={option}
+          selectedSubOption={selectedSubOption}
+          setSelectedSubOption={setSelectedSubOption}
+        />
+      ))}
     </Container>
   );
 };
