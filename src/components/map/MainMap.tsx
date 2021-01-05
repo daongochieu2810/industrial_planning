@@ -8,6 +8,7 @@ import mapboxgl, {
 } from "mapbox-gl";
 import suncalc from "suncalc";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import { MODE_IDS } from '../config/ModeIds';
 import "../../App.css";
 
 export interface MainMapProps {
@@ -18,10 +19,15 @@ const MainMap: React.FC<MainMapProps> = ({ mode }) => {
   const [lat, setLat] = useState<number>(34);
   const [lon, setLon] = useState<number>(5);
   const [zoom, setZoom] = useState<number>(15.5);
+  const [map, setMap] = useState<Map>(null);
 
   useEffect(() => {
     if (mode) {
-      console.log(mode);
+      if (mode === MODE_IDS.creationMode) {
+
+      } else if (mode === MODE_IDS.destructionMode) {
+
+      }
     }
   }, [mode]);
 
@@ -81,6 +87,9 @@ const MainMap: React.FC<MainMapProps> = ({ mode }) => {
       [e.point.x - 5, e.point.y - 5],
       [e.point.x + 5, e.point.y + 5],
     ];
+    setLat(e.lngLat.lat);
+    setLon(e.lngLat.lng);
+    
     let features = map.queryRenderedFeatures(bbox, {
       layers: ["3d-buildings"],
     });
@@ -94,20 +103,9 @@ const MainMap: React.FC<MainMapProps> = ({ mode }) => {
     //var filter = ["all", ["!=", ["id"], -1], ["!=", ["id"], features[0].id]];
     map.setFilter("3d-buildings", filter);
   }
-
   useEffect(() => {
-    if (mapContainer.current) {
-      const map: mapboxgl.Map = new mapboxgl.Map({
-        style: "mapbox://styles/mapbox/light-v10",
-        center: [-74.0066, 40.7135],
-        zoom: zoom,
-        pitch: 45,
-        bearing: -17.6,
-        container: mapContainer.current,
-        antialias: true,
-      });
-
-      map.addControl(
+    if (map) {
+ map.addControl(
         new MapboxGeocoder({
           accessToken: mapboxgl.accessToken,
           localGeocoder: coordinatesGeocoder,
@@ -119,7 +117,7 @@ const MainMap: React.FC<MainMapProps> = ({ mode }) => {
       map.on("click", function (e: MapMouseEvent & MapDataEvent) {
         hideExtrude(map, e);
       });
-      map.on("load", function () {
+      //map.on("load", function () {
         // Insert the layer beneath any symbol layer.
         var layers: Layer[] = map.getStyle().layers;
         var labelLayerId;
@@ -211,10 +209,30 @@ const MainMap: React.FC<MainMapProps> = ({ mode }) => {
             features: e.features,
           });
         });
-      });
     }
-  }, [mapContainer.current]);
-  return <div ref={mapContainer} className="map flex-1" />;
+  }, [map])
+
+  useEffect(() => {
+    if (mapContainer.current && !map) {
+      const _map = new mapboxgl.Map({
+        style: "mapbox://styles/mapbox/light-v10",
+        center: [-74.0066, 40.7135],
+        zoom: zoom,
+        pitch: 45,
+        bearing: -17.6,
+        container: mapContainer.current,
+        antialias: true,
+      });
+      _map.on("load", () => {
+        setMap(_map);
+        _map.resize();
+      })
+
+   } }, [mapContainer.current]);
+  return (<div className="flex-1 outline-none">
+    <div>Lat {lat}; Lon: {lon}</div>
+    <div ref={mapContainer} className="map"/>
+  </div>);
 };
 
 export default MainMap;
